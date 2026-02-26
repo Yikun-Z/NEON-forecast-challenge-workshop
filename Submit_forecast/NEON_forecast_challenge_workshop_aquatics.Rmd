@@ -16,6 +16,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 # This R markdown document
 
 This document presents workshop materials to get you started on generating forecasts specifically for submission to the EFI-NEON Forecasting Challenge.
@@ -36,7 +37,7 @@ To complete the workshop via this markdown document the following packages will 
 
 The following code chunk should be run to install packages.
 
-```{r eval = F}
+```{r eval = F}1
 install.packages('remotes')
 install.packages('fpp3') # package for applying simple forecasting methods
 install.packages('tsibble') # package for dealing with time series data sets and tsibble objects
