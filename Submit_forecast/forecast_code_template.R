@@ -1,7 +1,7 @@
-## install.packages('remotes')
-## install.packages('tidyverse') # collection of R packages for data manipulation, analysis, and visualisation
-## install.packages('lubridate') # working with dates and times
-## remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
+install.packages('remotes')
+install.packages('tidyverse') # collection of R packages for data manipulation, analysis, and visualisation
+install.packages('lubridate') # working with dates and times
+remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
 
 # ------ Load packages -----
 library(tidyverse)
@@ -11,11 +11,12 @@ library(lubridate)
 # Change this for your model ID
 # Include the word "example" in my_model_id for a test submission
 # Don't include the word "example" in my_model_id for a forecast that you have registered (see neon4cast.org for the registration form)
-my_model_id <- 'example_ID'
+my_model_id <- 'Forecasting_YE_V1'
 
 # --Model description--- #
 
 # Add a brief description of your modeling approach
+# My modeling used Temp(t) ~ AirTemp(t) + Temp(t-1), forecast used NOAA Stage2 ensemble air temperature and recursive lag updates.
 
 # -- Uncertainty representation -- #
 
@@ -107,25 +108,47 @@ for(i in 1:length(focal_sites)) {
   site_target <- targets_lm |>
     filter(site_id == curr_site)
   
+  # Add the lag column
+  site_target <- site_target |>
+    arrange(datetime) |>
+    mutate(temp_lag1 = lag(temperature, 1))
+  
   noaa_future_site <- weather_future_daily |> 
     filter(site_id == curr_site)
   
   #Fit linear model based on past data: water temperature = m * air temperature + b
   #you will need to change the variable on the left side of the ~ if you are forecasting oxygen or chla
-  fit <- lm(site_target$temperature ~ site_target$air_temperature)
+  train_df <- site_target |>
+    filter(!is.na(temperature),
+           !is.na(air_temperature),
+           !is.na(temp_lag1))
+  
+  fit <- lm(temperature ~ air_temperature + temp_lag1, data = train_df)
+  b <- coef(fit)
+  last_obs_temp <- tail(na.omit(site_target$temperature), 1)
   # fit <- lm(site_target$temperature ~ ....)
   
   # use linear regression to forecast water temperature for each ensemble member
-  # You will need to modify this line of code if you add additional weather variables or change the form of the model
-  # The model here needs to match the model used in the lm function above (or what model you used in the fit)
-  forecasted_temperature <- fit$coefficients[1] + fit$coefficients[2] * noaa_future_site$air_temperature
+  pred_one_param <- function(air_vec) {
+    preds <- numeric(length(air_vec))
+    prev <- last_obs_temp
+    
+    for (t in seq_along(air_vec)) {
+      preds[t] <- b[1] + b["air_temperature"] * air_vec[t] + b["temp_lag1"] * prev
+      prev <- preds[t]  # update lag with yesterday's prediction
+    }
+    
+    preds
+  }
   
   # put all the relevant information into a tibble that we can bind together
-  curr_site_df <- tibble(datetime = noaa_future_site$datetime,
-                         site_id = curr_site,
-                         parameter = noaa_future_site$parameter,
-                         prediction = forecasted_temperature,
-                         variable = "temperature") #Change this if you are forecasting a different variable
+  curr_site_df <- noaa_future_site |>
+    arrange(parameter, datetime) |>
+    group_by(parameter) |>
+    mutate(prediction = pred_one_param(air_temperature)) |>
+    ungroup()|>
+    mutate(variable = "temperature") |>
+    select(datetime, site_id, parameter, variable, prediction)
   
   forecast_df <- dplyr::bind_rows(forecast_df, curr_site_df)
   message(curr_site, 'forecast run')
