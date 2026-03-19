@@ -16,4 +16,4 @@ jobs:
           
  # Point to the right path, run the right Rscript command
       - name: Run automatic forecast submission
-        run: Rscript Submit_forecast/forecast_code_template.R
+        run: Rscript Submit_forecast/forecast_code_template_mod6.R
