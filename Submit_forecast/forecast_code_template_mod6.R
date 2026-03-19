@@ -1,6 +1,6 @@
-install.packages('remotes')
-install.packages('tidyverse') # collection of R packages for data manipulation, analysis, and visualisation
-install.packages('lubridate') # working with dates and times
+# install.packages('remotes')
+# install.packages('tidyverse') # collection of R packages for data manipulation, analysis, and visualisation
+# install.packages('lubridate') # working with dates and times
 # remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
 
 # ------ Load packages -----
