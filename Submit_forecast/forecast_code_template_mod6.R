@@ -1,7 +1,7 @@
 install.packages('remotes')
 install.packages('tidyverse') # collection of R packages for data manipulation, analysis, and visualisation
 install.packages('lubridate') # working with dates and times
-remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
+# remotes::install_github('eco4cast/neon4cast') # package from NEON4cast challenge organisers to assist with forecast building and submission
 
 # ------ Load packages -----
 library(tidyverse)
@@ -15,11 +15,11 @@ my_model_id <- 'Ye_0307_forecast'
 
 # --Model description--- #
 
-# Add a brief description of your modeling approach
+# The model uses a linear regression model to predict daily water temperature using air temperature and the previous day’s water temperature. The model is fitted using historical observations and weather data, and then used to generate forecasts for the next 30 days.
 
 # -- Uncertainty representation -- #
 
-# Describe what sources of uncertainty are included in your forecast and how you estimate each source.
+# Three sources of uncertainty (driver uncertainty, parameter uncertainty, and process uncertainty) are included in the forecast. Driver uncertainty is represented by the 31-member NOAA weather forecast ensemble. Parameter uncertainty is represented by drawing regression coefficients from normal distributions based on their estimated standard errors. Process uncertainty is represented by adding random noise based on the residual standard deviation of the fitted model.
 
 #------- Read data --------
 # read in the targets data
@@ -127,24 +127,24 @@ for(i in 1:length(focal_sites)) {
   coef_se  <- summary(fit)$coefficients[,2]
   model_sigma <- summary(fit)$sigma
   
-  # Loop through all forecast dates
-  for (t in 1:length(forecasted_dates)) {
+
+  # Loop over each ensemble member
+  for(ens in 1:n_members){
     
-    # use linear regression to forecast water temperature for each ensemble member
-    # You will need to modify this line of code if you add additional weather variables or change the form of the model
-    # The model here needs to match the model used in the lm function above (or what model you used in the fit)
+    met_ens <- weather_ensemble_names[ens]
     
-    # Loop over each ensemble member
-    for(ens in 1:n_members){
+    beta0 <- rnorm(1, coef_est[1], coef_se[1])
+    beta1 <- rnorm(1, coef_est[2], coef_se[2])
+    beta2 <- rnorm(1, coef_est[3], coef_se[3])
+    
+    last_obs_temp <- site_target$temperature[length(site_target$temperature)]
+    # Loop through all forecast dates
+    for (t in 1:length(forecasted_dates)) {
       
-      met_ens <- weather_ensemble_names[ens]
-      
-      beta0 <- rnorm(1, coef_est[1], coef_se[1])
-      beta1 <- rnorm(1, coef_est[2], coef_se[2])
-      beta2 <- rnorm(1, coef_est[3], coef_se[3])
-      
-      last_obs_temp <- site_target$temperature[length(site_target$temperature)]
-      
+      # use linear regression to forecast water temperature for each ensemble member
+      # You will need to modify this line of code if you add additional weather variables or change the form of the model
+      # The model here needs to match the model used in the lm function above (or what model you used in the fit)
+        
       #pull driver ensemble for the relevant date; here we are using all 31 NOAA ensemble members
       temp_driv <- weather_future_daily %>%
         filter(datetime == forecasted_dates[t],
