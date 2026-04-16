@@ -1,0 +1,24 @@
+---
+title: "reforecast project"
+format: html
+---
+
+#### Model description
+
+The model uses a linear regression model to reforecast daily water temperature at BARC using air temperature, the previous day’s water temperature, and the square of air temperature. The model is fitted using historical observations and weather data, and then used to generate forecasts for the next 35 days.
+
+#### Reforecast setup
+
+A 1-year reforecast analysis was conducted at BARC. Reforecasts were initialized every 35 days from 2024-01-01 to 2025-01-01. For each reforecast, the model generated a 35-day ensemble forecast using 31 NOAA weather ensemble members. Forecast performance was evaluated using CRPS and compared with two baseline models, climatology and persistenceRW.
+
+#### Results
+
+The figure below shows the relationship between forecast horizon and mean CRPS for the three models.
+
+![](crps_comparison_BARC.png)
+
+The reforecast results show that the proposed model performed better than persistenceRW across all lead times, especially at short to medium horizons. Compared with climatology, the proposed model achieved lower CRPS at short lead times, but its performance gradually approached climatology as forecast horizon increased.
+
+#### Code
+
+The code for this reforecast analysis is available in my GitHub repository.
